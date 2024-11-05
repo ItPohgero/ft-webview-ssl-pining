@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-
+import 'package:ftwv_saqu/view/home/controller/home_controller.dart';
+import 'package:get/get.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late InAppWebViewController _webViewController;
   final GlobalKey webViewKey = GlobalKey();
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -20,11 +22,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // const google = 'https://google.com';
-    const sit = 'https://sit-obwebview.sta-wlabid.net/web/partnerAuthenticate?jwt_token=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI3MzZmN2FmNmQxNjFmNGI5ZWU1ODZlYzI4MDY0ZmNjZiIsImlwYWRkcmVzcyI6IjExMi4yMTUuMjMxLjkiLCJ1c2VyX3R5cGUiOiJpbTMiLCJjdXN0aWQiOiJhNDg3OWI0Y2ZkYjQyOGQ5MWJlY2Y3M2ZiNmQ5YzAyYiIsImRldmljZV9pZCI6InRlc3RpbmcxMjMiLCJwcm9maWxlcyI6IndlZWtfdXNlciIsInN1YnN0eXBlIjoiZGFkMjMyMGVmMmM0ZGRiMWZiMDQ1YmJhOTE5NjIxNmYiLCJleHAiOjE4MTkyODQ4NjAsImlhdCI6MTgxOTI4NDg2MCwibGF0IjoiLTYuMjUyMjUyMjUyMjUyMjUyIiwibG9uZyI6IjEwNi42ODg2MzE4NTAyMDg4OSJ9.XYe5t_BTmk1Ey-MPsLXBGd_AhA6lRVi2bTWDgxF74io&jwt_client=Bank-Saqu&partnerId=450acc1cdb9447d2867b41a935b75c5e';
+    final HomeController controller = Get.find<HomeController>();
+    final String url = controller.loginDM.urlCurrent;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Webview Testing'),
+        title: const Text('Webview'),
         actions: [
           IconButton(
             icon: const Icon(Icons.arrow_back),
@@ -48,15 +51,33 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: InAppWebView(
-        key: webViewKey,
-        initialUrlRequest: URLRequest(url: WebUri(sit)),
-        onWebViewCreated: (controller) {
-          _webViewController = controller;
-        },
-        onReceivedServerTrustAuthRequest: (controller, challenge) async {
-          return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
-        },
+      body: Stack(
+        children: [
+          InAppWebView(
+            key: webViewKey,
+            initialUrlRequest: URLRequest(url: WebUri(url)),
+            onWebViewCreated: (controller) {
+              _webViewController = controller;
+            },
+            onLoadStart: (controller, url) {
+              setState(() {
+                _isLoading = true;
+              });
+            },
+            onLoadStop: (controller, url) async {
+              setState(() {
+                _isLoading = false;
+              });
+            },
+            onReceivedServerTrustAuthRequest: (controller, challenge) async {
+              return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
+            },
+          ),
+          if (_isLoading)
+            const Center(
+              child: CircularProgressIndicator(),
+            ),
+        ],
       ),
     );
   }
