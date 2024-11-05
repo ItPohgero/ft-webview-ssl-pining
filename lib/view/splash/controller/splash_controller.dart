@@ -8,7 +8,7 @@ class SplashController extends GetxController {
   void onInit() {
     super.onInit();
     Future.delayed(const Duration(seconds: 3), () {
-      Navigation.navigateTo(Screen.onboarding);
+      Navigation.navigateTo(Screen.login);
     });
   }
 }

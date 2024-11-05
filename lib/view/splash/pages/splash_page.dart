@@ -18,8 +18,11 @@ class SplashView extends StatelessWidget {
             SizedBox(height: 20),
             // CText("Test"),
             Text(
-              'Your App Name',
+              'Bank Saqu',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),Text(
+              'Test Webview',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
           ],
         ),
