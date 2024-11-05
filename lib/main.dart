@@ -1,16 +1,12 @@
 import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:ftwv_saqu/overide.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
-// cred.pem
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // TODO Remove after SLL trusted
-  ByteData data = await PlatformAssetBundle().load('assets/_.badssl.com.pem');
+  ByteData data = await PlatformAssetBundle().load('assets/sit-obwebview.sta-wlabid.net.pem');
   SecurityContext.defaultContext
       .setTrustedCertificatesBytes(data.buffer.asUint8List());
   HttpOverrides.global = MyHttpOverrides();
@@ -26,7 +22,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 class SimpleWebViewScreen extends StatefulWidget {
   const SimpleWebViewScreen({super.key});
 
@@ -35,14 +30,12 @@ class SimpleWebViewScreen extends StatefulWidget {
 }
 
 class _SimpleWebViewScreenState extends State<SimpleWebViewScreen> {
-  late final WebViewController _webViewController;
+  late InAppWebViewController _webViewController;
+  final GlobalKey webViewKey = GlobalKey();
 
   @override
   void initState() {
     super.initState();
-    _webViewController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..loadRequest(Uri.parse('https://untrusted-root.badssl.com'));
   }
 
   @override
@@ -73,10 +66,19 @@ class _SimpleWebViewScreenState extends State<SimpleWebViewScreen> {
           ),
         ],
       ),
-      body: WebViewWidget(controller: _webViewController),
+      body: InAppWebView(
+        key: webViewKey,
+        initialUrlRequest: URLRequest(url: WebUri('https://sit-obwebview.sta-wlabid.net')),
+        onWebViewCreated: (controller) {
+          _webViewController = controller;
+        },
+        onReceivedServerTrustAuthRequest: (controller, challenge) async {
+          return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final String? url = await _webViewController.currentUrl();
+          final url = await _webViewController.getUrl();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Favorited $url')),
           );
