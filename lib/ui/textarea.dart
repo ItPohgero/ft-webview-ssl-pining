@@ -1,35 +1,46 @@
 import 'package:flutter/material.dart';
 
+// CustomTextField with scrollable content when height exceeds 400
 class CustomTextField extends StatelessWidget {
   final TextEditingController controller;
-  final FormFieldValidator<String>? validator; // Add validator parameter
+  final FormFieldValidator<String>? validator;
 
   const CustomTextField({
     Key? key,
     required this.controller,
-    this.validator, // Accept the validator
+    this.validator,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       constraints: const BoxConstraints(
-        maxHeight: 300, // Set maximum height to 300px
+        minHeight: 100, // Set minimum height to 100px
       ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10), // Rounded corners
       ),
       child: CustomPaint(
         painter: DashedBorderPainter(), // Custom dashed border painter
-        child: SingleChildScrollView( // Wrap with SingleChildScrollView for scrolling
-          child: TextFormField(
-            controller: controller,
-            validator: validator, // Set the validator
-            maxLines: null, // Allows the TextFormField to expand
-            decoration: const InputDecoration(
-              labelText: 'Input valid url',
-              border: InputBorder.none, // Remove default border
-              contentPadding: EdgeInsets.all(12), // Padding for the text
+        child: SingleChildScrollView( // Make content scrollable
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxHeight: 400, // Fixed height of 400 for the field
+            ),
+            child: TextFormField(
+              controller: controller,
+              validator: validator,
+              maxLines: null, // Allows the TextFormField to expand
+              decoration: const InputDecoration(
+                labelText: 'Input valid url',
+                border: InputBorder.none, // Remove default border
+                contentPadding: EdgeInsets.symmetric(vertical: 16, horizontal: 12), // Adjust padding for better positioning
+                errorStyle: TextStyle(
+                  fontSize: 12, // Adjust error text size
+                  height: 1.2, // Move error message closer to the text field
+                  color: Colors.red, // Set error text color
+                ),
+              ),
             ),
           ),
         ),
@@ -45,7 +56,7 @@ class DashedBorderPainter extends CustomPainter {
     final paint = Paint()
       ..color = Colors.black12
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2; // Border thickness
+      ..strokeWidth = 1.5; // Border thickness
 
     double dashWidth = 5;
     double dashSpace = 5;

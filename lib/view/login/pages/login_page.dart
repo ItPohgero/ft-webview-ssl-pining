@@ -112,19 +112,6 @@ class LoginPage extends BasePage<LoginController> {
               }),
 
               const SizedBox(height: 20),
-
-              // Error message section
-              Obx(() {
-                if (controller.errorMessage.value.isNotEmpty) {
-                  return Text(
-                    controller.errorMessage.value,
-                    style: const TextStyle(color: Colors.red),
-                  );
-                }
-                return const SizedBox.shrink();
-              }),
-              const SizedBox(height: 40),
-
               // View button section
               Obx(() {
                 if (controller.isLoading.value) {
