@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:ftwv_saqu/view/home/controller/home_controller.dart';
 import 'package:get/get.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,10 +16,49 @@ class _HomeScreenState extends State<HomeScreen> {
   late InAppWebViewController _webViewController;
   final GlobalKey webViewKey = GlobalKey();
   bool _isLoading = true;
+  Position? _currentPosition;
 
   @override
   void initState() {
     super.initState();
+    _requestPermissions();
+  }
+
+  Future<void> _requestPermissions() async {
+    await Permission.location.request();
+    await Permission.camera.request();
+    await _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      setState(() {
+        _currentPosition = position;
+      });
+    } catch (e) {
+      print("Error getting location: $e");
+    }
+  }
+
+  Future<void> _injectLocationToWebView() async {
+    if (_currentPosition != null) {
+      final String javascript = '''
+        window.latitude = ${_currentPosition!.latitude};
+        window.longitude = ${_currentPosition!.longitude};
+        // Trigger a custom event that the webpage can listen to
+        const event = new CustomEvent('locationUpdated', {
+          detail: {
+            latitude: ${_currentPosition!.latitude},
+            longitude: ${_currentPosition!.longitude}
+          }
+        });
+        window.dispatchEvent(event);
+      ''';
+      await _webViewController.evaluateJavascript(source: javascript);
+    }
   }
 
   Future<void> clearStorageAndCookies() async {
@@ -46,8 +87,8 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () async {
-                  await clearStorageAndCookies();
-                  _webViewController.reload();
+              await clearStorageAndCookies();
+              _webViewController.reload();
             },
           ),
         ],
@@ -69,13 +110,41 @@ class _HomeScreenState extends State<HomeScreen> {
               setState(() {
                 _isLoading = false;
               });
+              await _injectLocationToWebView();
             },
             onReceivedServerTrustAuthRequest: (controller, challenge) async {
-              return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
+              return ServerTrustAuthResponse(
+                  action: ServerTrustAuthResponseAction.PROCEED
+              );
             },
-            // onPermissionRequest: (controller, request) async {
-            //   // Assuming you want to allow the requested permissions
-            // },
+            onPermissionRequest: (controller, request) async {
+              Map<PermissionResourceType, bool> permissions = {};
+
+              for (var resource in request.resources) {
+                if (resource == PermissionResourceType.CAMERA) {
+                  permissions[resource] = await Permission.camera.isGranted;
+                }
+                if (resource == PermissionResourceType.GEOLOCATION) {
+                  permissions[resource] = await Permission.location.isGranted;
+                }
+              }
+
+              return PermissionResponse(
+                  resources: permissions.entries
+                      .where((entry) => entry.value)
+                      .map((entry) => entry.key)
+                      .toList(),
+                  action: permissions.isNotEmpty
+                      ? PermissionResponseAction.GRANT
+                      : PermissionResponseAction.DENY
+              );
+            },
+            onGeolocationPermissionsShowPrompt:
+                (InAppWebViewController controller, String origin) async {
+              bool permission = await Permission.location.isGranted;
+              return GeolocationPermissionShowPromptResponse(
+                  origin: origin, allow: permission, retain: true);
+            },
           ),
           if (_isLoading)
             const Center(
