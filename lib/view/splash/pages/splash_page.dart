@@ -9,21 +9,26 @@ class SplashView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Get.find<SplashController>();
-    return const Scaffold(
+    return  Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FlutterLogo(size: 100),
-            SizedBox(height: 20),
-            // CText("Test"),
-            Text(
-              'Bank Saqu',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),Text(
-              'Test Webview',
+            Image.asset(
+              'assets/logo.png',
+              height: 50,
+              fit: BoxFit.cover,
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'For Testing Webview',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
+            const Text(
+              'v. 1.0.1',
+              style: TextStyle(fontSize: 11),
+            ),
+
           ],
         ),
       ),

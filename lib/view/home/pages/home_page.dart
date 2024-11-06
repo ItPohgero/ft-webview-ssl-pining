@@ -20,34 +20,35 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
   }
 
+  Future<void> clearStorageAndCookies() async {
+    // Clear local storage and cookies
+    await InAppWebViewController.clearAllCache();
+    // Use this method to clear session storage
+    String clearScript = '''
+      localStorage.clear();
+      sessionStorage.clear();
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      true;
+    ''';
+    await _webViewController.evaluateJavascript(source: clearScript);
+  }
+
   @override
   Widget build(BuildContext context) {
     final HomeController controller = Get.find<HomeController>();
     final String url = controller.loginDM.urlCurrent;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Webview'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () async {
-              if (await _webViewController.canGoBack()) {
-                _webViewController.goBack();
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.arrow_forward),
-            onPressed: () async {
-              if (await _webViewController.canGoForward()) {
-                _webViewController.goForward();
-              }
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () => _webViewController.reload(),
+            onPressed: () async {
+                  await clearStorageAndCookies();
+                  _webViewController.reload();
+            },
           ),
         ],
       ),
@@ -72,6 +73,9 @@ class _HomeScreenState extends State<HomeScreen> {
             onReceivedServerTrustAuthRequest: (controller, challenge) async {
               return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.PROCEED);
             },
+            // onPermissionRequest: (controller, request) async {
+            //   // Assuming you want to allow the requested permissions
+            // },
           ),
           if (_isLoading)
             const Center(
