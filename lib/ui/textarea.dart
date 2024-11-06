@@ -17,8 +17,8 @@ class CustomTextField extends StatelessWidget {
       constraints: const BoxConstraints(
         minHeight: 100, // Set minimum height to 100px
       ),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10), // Rounded corners
+      decoration: const BoxDecoration(
+        color: Color(0XFFfdf4ff),
       ),
       child: CustomPaint(
         painter: DashedBorderPainter(), // Custom dashed border painter
@@ -56,7 +56,7 @@ class DashedBorderPainter extends CustomPainter {
     final paint = Paint()
       ..color = Colors.black12
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5; // Border thickness
+      ..strokeWidth = 1; // Border thickness
 
     double dashWidth = 5;
     double dashSpace = 5;

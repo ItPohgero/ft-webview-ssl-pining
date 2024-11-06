@@ -1,8 +1,7 @@
-import 'package:ftwv_saqu/app/route/screen.dart';
 import 'package:flutter/material.dart';
+import 'package:ftwv_saqu/app/route/screen.dart';
 import 'package:ftwv_saqu/ui/textarea.dart';
 import 'package:get/get.dart';
-
 import '../../../app/route/navigation_helper.dart';
 import '../../../base/base_page.dart';
 import '../../../models/view_data_model/login_dm.dart';
@@ -112,41 +111,69 @@ class LoginPage extends BasePage<LoginController> {
               }),
 
               const SizedBox(height: 20),
-              // View button section
+              // View and Clear button section
               Obx(() {
                 if (controller.isLoading.value) {
                   return const CircularProgressIndicator();
                 }
-                return ElevatedButton(
-                  onPressed: () {
-                    if (formKey.currentState?.validate() == true) { // Validasi form sebelum navigasi
-                      String url = controller.url.text;
-                      Navigation.navigateToWithArguments(
-                        Screen.home,
-                        arguments: {
-                          'loginDM': LoginDM(urlCurrent: url),
+                return Row(
+                  children: [
+                    // Load Webview Button - takes maximum width
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (formKey.currentState?.validate() == true) {
+                            String url = controller.url.text;
+                            Navigation.navigateToWithArguments(
+                              Screen.home,
+                              arguments: {
+                                'loginDM': LoginDM(urlCurrent: url),
+                              },
+                            );
+                          }
                         },
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0XFF003CF3),
-                    padding: const EdgeInsets.all(4),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0XFF003CF3),
+                          padding: const EdgeInsets.all(4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          minimumSize: const Size(double.infinity, 50), // Full width for this button
+                        ),
+                        child: const Text(
+                          'Load Webview',
+                          style: TextStyle(
+                            color: Colors.white, // Set text color to white
+                            fontSize: 16, // Optional: set font size
+                          ),
+                        ),
+                      ),
                     ),
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
-                  child: const Text(
-                    'Load Webview',
-                    style: TextStyle(
-                      color: Colors.white, // Set text color to white
-                      fontSize: 16, // Optional: set font size
-                    ),
-                  ),
+                    const SizedBox(width: 10), // Space between the buttons
+                    // Clear Button - only show if URL is valid
+                    ElevatedButton(
+                        onPressed: () {
+                          controller.url.clear(); // Clear the text field
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF5762),
+                          padding: const EdgeInsets.all(4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          minimumSize: const Size(100, 50), // Fixed width for "Clear" button
+                        ),
+                        child: const Text(
+                          'Clear',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                  ],
                 );
               }),
-
             ],
           ),
         ),
