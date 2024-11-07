@@ -20,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Position? _currentPosition;
   List<String> consoleLogs = [];
   String vLinkingWebViewErrorDiv = "";
+  String? currentUrl;
 
   @override
   void initState() {
@@ -110,6 +111,10 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text("Get By Hidden ID", style: TextStyle(fontWeight: FontWeight.bold)),
             const Text("v-linking-webview-error-div", style: TextStyle(color: Colors.blue)),
             Text(vLinkingWebViewErrorDiv),
+            const SizedBox(height: 10),
+            const Text("Current URL", style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(currentUrl ?? ""),
+
           ],
         ),
       ),
@@ -214,6 +219,10 @@ class _HomeScreenState extends State<HomeScreen> {
               setState(() {
                 _isLoading = false;
               });
+              final regex = RegExp(r"^(https?:\/\/[^\/?]+\/[^?]*)");
+              final match = regex.firstMatch(url?.toString() ?? "");
+              final baseUrl = match?.group(0);
+              currentUrl = baseUrl;
               await _injectLocationToWebView();
             },
             onReceivedServerTrustAuthRequest: (controller, challenge) async {
