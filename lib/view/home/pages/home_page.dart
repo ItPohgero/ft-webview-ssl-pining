@@ -1,8 +1,12 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:ftwv_saqu/view/home/controller/home_controller.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -76,14 +80,73 @@ class _HomeScreenState extends State<HomeScreen> {
     await _webViewController.evaluateJavascript(source: clearScript);
   }
 
+  List<String> consoleLogs = [];
   @override
   Widget build(BuildContext context) {
     final HomeController controller = Get.find<HomeController>();
     final String url = controller.loginDM.urlCurrent;
+    if(kDebugMode){
+      print(jsonEncode(consoleLogs));
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Webview'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: () async {
+              await clearStorageAndCookies();
+              _webViewController.reload();
+              // Show the bottom sheet after performing the action
+              showMaterialModalBottomSheet(
+                expand: false,
+                context: context,
+                backgroundColor: Colors.white,
+                  builder: (context) => Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Console Logs",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: consoleLogs.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.info_outline,
+                                  size: 18,
+                                  color: Colors.blue,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    consoleLogs[index],
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () async {
@@ -144,6 +207,13 @@ class _HomeScreenState extends State<HomeScreen> {
               bool permission = await Permission.location.isGranted;
               return GeolocationPermissionShowPromptResponse(
                   origin: origin, allow: permission, retain: true);
+            },
+            onConsoleMessage: (controller, consoleMessage) {
+              setState(() {
+                consoleLogs.add(
+                  '[${consoleMessage.messageLevel.toString()}] ${consoleMessage.message}',
+                );
+              });
             },
           ),
           if (_isLoading)
