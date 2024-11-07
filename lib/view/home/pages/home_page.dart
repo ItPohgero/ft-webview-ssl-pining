@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:ftwv_saqu/view/home/controller/home_controller.dart';
@@ -21,6 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey webViewKey = GlobalKey();
   bool _isLoading = true;
   Position? _currentPosition;
+  List<String> consoleLogs = [];
+  String vLinkingWebViewErrorDiv = "";
 
   @override
   void initState() {
@@ -52,7 +51,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final String javascript = '''
         window.latitude = ${_currentPosition!.latitude};
         window.longitude = ${_currentPosition!.longitude};
-        // Trigger a custom event that the webpage can listen to
         const event = new CustomEvent('locationUpdated', {
           detail: {
             latitude: ${_currentPosition!.latitude},
@@ -66,9 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> clearStorageAndCookies() async {
-    // Clear local storage and cookies
     await InAppWebViewController.clearAllCache();
-    // Use this method to clear session storage
     String clearScript = '''
       localStorage.clear();
       sessionStorage.clear();
@@ -80,14 +76,52 @@ class _HomeScreenState extends State<HomeScreen> {
     await _webViewController.evaluateJavascript(source: clearScript);
   }
 
-  List<String> consoleLogs = [];
+  Future<void> fetchElementContent() async {
+    const String script = '''
+      (function() {
+        var element = document.getElementById("vlinking-webview-error-div");
+        return element ? element.innerText : "Element not found";
+      })();
+    ''';
+    String? result = await _webViewController.evaluateJavascript(source: script);
+    setState(() {
+      vLinkingWebViewErrorDiv = result ?? "..";
+    });
+    showBottomSheetWithContent();
+  }
+
+  void showBottomSheetWithContent() {
+    showMaterialModalBottomSheet(
+      expand: false,
+      context: context,
+      backgroundColor: Colors.white,
+      builder: (context) => SizedBox(
+      height: MediaQuery.of(context).size.height * 0.9,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Information",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            const Text("Get By Hidden ID", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text("v-linking-webview-error-div", style: TextStyle(color: Colors.blue)),
+            Text(vLinkingWebViewErrorDiv),
+          ],
+        ),
+      ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final HomeController controller = Get.find<HomeController>();
     final String url = controller.loginDM.urlCurrent;
-    if(kDebugMode){
-      print(jsonEncode(consoleLogs));
-    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Webview'),
@@ -97,53 +131,56 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () async {
               await clearStorageAndCookies();
               _webViewController.reload();
-              // Show the bottom sheet after performing the action
               showMaterialModalBottomSheet(
                 expand: false,
                 context: context,
                 backgroundColor: Colors.white,
-                  builder: (context) => Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Console Logs",
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: consoleLogs.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 4.0),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(
-                                  Icons.info_outline,
-                                  size: 18,
-                                  color: Colors.blue,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    consoleLogs[index],
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.black,
+                builder: (context) => SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.9,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Console Log",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        Expanded(
+                          child: ListView.builder(
+                            itemCount: consoleLogs.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.info_outline,
+                                      size: 18,
+                                      color: Colors.blue,
                                     ),
-                                  ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        consoleLogs[index],
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),),
+                  ),
+                ),
               );
             },
           ),
@@ -153,6 +190,10 @@ class _HomeScreenState extends State<HomeScreen> {
               await clearStorageAndCookies();
               _webViewController.reload();
             },
+          ),
+          IconButton(
+            icon: const Icon(Icons.info),
+            onPressed: fetchElementContent,
           ),
         ],
       ),
