@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:ftwv_saqu/utils/id.dart';
 import 'package:ftwv_saqu/view/home/controller/home_controller.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
@@ -20,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Position? _currentPosition;
   List<String> consoleLogs = [];
   String vLinkingWebViewErrorDiv = "";
+  String postMessageContent = "";
   String? currentUrl;
 
   @override
@@ -86,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> fetchElementContent() async {
     const script = '''
       (function() {
-        var element = document.getElementById("vlinking-webview-error-div");
+        var element = document.getElementById("${HiddenID.value}");
         return element ? element.innerText : "Element not found";
       })();
     ''';
@@ -113,18 +115,22 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Information",
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text("Information", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
             _buildInfoSection(
               title: "Get By Hidden ID",
-              subtitle: "v-linking-webview-error-div",
+              subtitle: HiddenID.value,
               content: vLinkingWebViewErrorDiv,
             ),
             const SizedBox(height: 10),
             _buildInfoSection(
               title: "Current URL",
               content: currentUrl ?? "",
+            ),
+            const SizedBox(height: 10),
+            _buildInfoSection(
+              title: "Post Message Content",
+              content: postMessageContent ?? "",
             ),
           ],
         ),
@@ -249,6 +255,25 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  Future<void> _sendMessageToWebView() async {
+    const message = '{"screen":"Password", "button":"Finish"}';
+
+    // Script to add an event listener for incoming messages and call the Flutter handler.
+    const javascript = '''
+      window.addEventListener("message", (event) => {
+        if (window.flutter_inappwebview) {
+          window.flutter_inappwebview.callHandler("onPostMessage", event.data);
+        }
+      });
+      
+      // Send a message from Flutter to WebView.
+      window.postMessage('$message', '*');
+    ''';
+    // Evaluate the script to inject the listener and send the message.
+    await _webViewController.evaluateJavascript(source: javascript);
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final HomeController controller = Get.find<HomeController>();
@@ -271,12 +296,16 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
+          // IconButton(
+          //   icon: const Icon(Icons.refresh),
+          //   onPressed: () async {
+          //     await clearStorageAndCookies();
+          //     _webViewController.reload();
+          //   },
+          // ),
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () async {
-              await clearStorageAndCookies();
-              _webViewController.reload();
-            },
+            icon: const Icon(Icons.ac_unit),
+            onPressed: _sendMessageToWebView,
           ),
           IconButton(
             icon: const Icon(Icons.info),
@@ -289,7 +318,19 @@ class _HomeScreenState extends State<HomeScreen> {
           InAppWebView(
             key: webViewKey,
             initialUrlRequest: URLRequest(url: WebUri(url)),
-            onWebViewCreated: (controller) => _webViewController = controller,
+            onWebViewCreated: (controller) {
+              _webViewController = controller;
+              _webViewController.addJavaScriptHandler(
+                handlerName: "onPostMessage",
+                callback: (args) {
+                  if (args.isNotEmpty) {
+                    setState(() {
+                      postMessageContent = args[0];
+                    });
+                  }
+                },
+              );
+            },
             onLoadStart: (controller, url) => setState(() => _isLoading = true),
             onLoadStop: (controller, url) async {
               setState(() => _isLoading = false);
