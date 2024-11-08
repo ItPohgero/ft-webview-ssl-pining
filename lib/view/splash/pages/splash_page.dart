@@ -25,7 +25,7 @@ class SplashView extends StatelessWidget {
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
             ),
             const Text(
-              'v. 1.0.1',
+              'v. 1.0.2',
               style: TextStyle(fontSize: 11),
             ),
 
