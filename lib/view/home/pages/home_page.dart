@@ -112,28 +112,30 @@ class _HomeScreenState extends State<HomeScreen> {
       height: MediaQuery.of(context).size.height * 0.9,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Information", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            _buildInfoSection(
-              title: "Get By Hidden ID",
-              subtitle: HiddenID.value,
-              content: vLinkingWebViewErrorDiv,
-            ),
-            const SizedBox(height: 10),
-            _buildInfoSection(
-              title: "Current URL",
-              content: currentUrl ?? "",
-            ),
-            const SizedBox(height: 10),
-            _buildInfoSection(
-              title: "Post Message Content",
-              content: postMessageContent ?? "",
-            ),
-          ],
-        ),
+        child: SingleChildScrollView(
+            child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Information", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
+                    _buildInfoSection(
+                      title: "Get By Hidden ID",
+                      subtitle: HiddenID.value,
+                      content: vLinkingWebViewErrorDiv,
+                    ),
+                    const SizedBox(height: 10),
+                    _buildInfoSection(
+                      title: "Current URL",
+                      content: currentUrl ?? "",
+                    ),
+                    const SizedBox(height: 10),
+                    _buildInfoSection(
+                      title: "Post Message Content",
+                      content: postMessageContent ?? "",
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
   }
@@ -303,10 +305,10 @@ class _HomeScreenState extends State<HomeScreen> {
           //     _webViewController.reload();
           //   },
           // ),
-          IconButton(
-            icon: const Icon(Icons.ac_unit),
-            onPressed: _sendMessageToWebView,
-          ),
+          // IconButton(
+          //   icon: const Icon(Icons.ac_unit),
+          //   onPressed: _sendMessageToWebView,
+          // ),
           IconButton(
             icon: const Icon(Icons.info),
             onPressed: fetchElementContent,
