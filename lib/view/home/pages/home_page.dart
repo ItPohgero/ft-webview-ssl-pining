@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Position? _currentPosition;
   List<String> consoleLogs = [];
   String vLinkingWebViewErrorDiv = "";
-  String postMessageContent = "";
+  List<String> postMessageContent = [];
   String? currentUrl;
 
   @override
@@ -107,44 +107,60 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildPostMessageList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Post Messages",
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        if (postMessageContent.isEmpty) const Text("No messages received"),
+        ...postMessageContent.reversed
+            .map((message) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Text(
+                    message,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ))
+            .toList(),
+      ],
+    );
+  }
+
   Widget _buildInfoBottomSheet() {
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.9,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
-            child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Information", style: TextStyle(fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 10),
-                    _buildInfoSection(
-                      title: "Get By Hidden ID",
-                      subtitle: HiddenID.value,
-                      content: vLinkingWebViewErrorDiv,
-                    ),
-                    const SizedBox(height: 10),
-                    _buildInfoSection(
-                      title: "Current URL",
-                      content: currentUrl ?? "",
-                    ),
-                    const SizedBox(height: 10),
-                    _buildInfoSection(
-                      title: "Post Message Content",
-                      content: postMessageContent ?? "",
-                    ),
-                  ],
-                ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("Information",
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              _buildInfoSection(
+                title: "Get By Hidden ID",
+                subtitle: HiddenID.value,
+                content: vLinkingWebViewErrorDiv,
               ),
+              const SizedBox(height: 10),
+              _buildInfoSection(
+                title: "Current URL",
+                content: currentUrl ?? "",
+              ),
+              const SizedBox(height: 10),
+              // Modify the _buildInfoSection method to accept a Widget instead of a String
+              _buildPostMessageList()
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildInfoSection({
-    required String title,
-    String? subtitle,
-    required String content
-  }) {
+  Widget _buildInfoSection(
+      {required String title, String? subtitle, required String content}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -170,7 +186,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: ListView.builder(
                 itemCount: consoleLogs.length,
-                itemBuilder: (context, index) => _buildConsoleLogItem(consoleLogs[index]),
+                itemBuilder: (context, index) =>
+                    _buildConsoleLogItem(consoleLogs[index]),
               ),
             ),
           ],
@@ -201,17 +218,13 @@ class _HomeScreenState extends State<HomeScreen> {
   // WebView Callbacks
   Future<ServerTrustAuthResponse?> _handleServerTrustAuth(
       InAppWebViewController controller,
-      URLAuthenticationChallenge challenge
-      ) async {
+      URLAuthenticationChallenge challenge) async {
     return ServerTrustAuthResponse(
-        action: ServerTrustAuthResponseAction.PROCEED
-    );
+        action: ServerTrustAuthResponseAction.PROCEED);
   }
 
   Future<PermissionResponse> _handlePermissionRequest(
-      InAppWebViewController controller,
-      PermissionRequest request
-      ) async {
+      InAppWebViewController controller, PermissionRequest request) async {
     Map<PermissionResourceType, bool> permissions = {};
 
     for (var resource in request.resources) {
@@ -230,51 +243,23 @@ class _HomeScreenState extends State<HomeScreen> {
             .toList(),
         action: permissions.isNotEmpty
             ? PermissionResponseAction.GRANT
-            : PermissionResponseAction.DENY
-    );
+            : PermissionResponseAction.DENY);
   }
 
   Future<GeolocationPermissionShowPromptResponse> _handleGeolocationPermission(
-      InAppWebViewController controller,
-      String origin
-      ) async {
+      InAppWebViewController controller, String origin) async {
     final permission = await Permission.location.isGranted;
     return GeolocationPermissionShowPromptResponse(
-        origin: origin,
-        allow: permission,
-        retain: true
-    );
+        origin: origin, allow: permission, retain: true);
   }
 
   void _handleConsoleMessage(
-      InAppWebViewController controller,
-      ConsoleMessage consoleMessage
-      ) {
+      InAppWebViewController controller, ConsoleMessage consoleMessage) {
     setState(() {
-      consoleLogs.add(
-          '[${consoleMessage.messageLevel}] ${consoleMessage.message}'
-      );
+      consoleLogs
+          .add('[${consoleMessage.messageLevel}] ${consoleMessage.message}');
     });
   }
-
-  Future<void> _sendMessageToWebView() async {
-    const message = '{"screen":"Password", "button":"Finish"}';
-
-    // Script to add an event listener for incoming messages and call the Flutter handler.
-    const javascript = '''
-      window.addEventListener("message", (event) => {
-        if (window.flutter_inappwebview) {
-          window.flutter_inappwebview.callHandler("onPostMessage", event.data);
-        }
-      });
-      
-      // Send a message from Flutter to WebView.
-      window.postMessage('$message', '*');
-    ''';
-    // Evaluate the script to inject the listener and send the message.
-    await _webViewController.evaluateJavascript(source: javascript);
-  }
-
 
   @override
   Widget build(BuildContext context) {
@@ -298,17 +283,6 @@ class _HomeScreenState extends State<HomeScreen> {
               );
             },
           ),
-          // IconButton(
-          //   icon: const Icon(Icons.refresh),
-          //   onPressed: () async {
-          //     await clearStorageAndCookies();
-          //     _webViewController.reload();
-          //   },
-          // ),
-          // IconButton(
-          //   icon: const Icon(Icons.ac_unit),
-          //   onPressed: _sendMessageToWebView,
-          // ),
           IconButton(
             icon: const Icon(Icons.info),
             onPressed: fetchElementContent,
@@ -327,14 +301,83 @@ class _HomeScreenState extends State<HomeScreen> {
                 callback: (args) {
                   if (args.isNotEmpty) {
                     setState(() {
-                      postMessageContent = args[0];
+                      // Parse the incoming message and add to the list
+                      String newMessage = args[0] is String
+                          ? args[0]
+                          : (args[0] as Map<String, dynamic>)['data'] ?? "";
+
+                      // Add the new message to the list
+                      postMessageContent.add(newMessage);
                     });
                   }
                 },
               );
+              // _webViewController.addJavaScriptHandler(
+              //   handlerName: "onPostMessage",
+              //   callback: (args) {
+              //     if (args.isNotEmpty) {
+              //       setState(() {
+              //         postMessageContent = args[0];
+              //       });
+              //     }
+              //   },
+              // );
             },
             onLoadStart: (controller, url) => setState(() => _isLoading = true),
             onLoadStop: (controller, url) async {
+              await controller.evaluateJavascript(source: """
+              // Simulasi WebView React Native postMessage untuk Flutter
+              window.ReactNativeWebView = {
+                postMessage: function(message) {
+                  window.flutter_inappwebview.callHandler('onPostMessage', message);
+                }
+              };
+            
+              // Simulasi Capacitor WebView
+              window.Capacitor = {
+                Plugins: {
+                  WebView: {
+                    postMessage: function(message) {
+                      window.flutter_inappwebview.callHandler('onPostMessage', message);
+                    }
+                  }
+                }
+              };
+            
+              // Simulasi Cordova WebView
+              window.cordova = {
+                plugins: {
+                  bridge: {
+                    postMessage: function(message) {
+                      window.flutter_inappwebview.callHandler('onPostMessage', message);
+                    }
+                  }
+                }
+              };
+            
+              // Simulasi Native Android
+              window.Android = {
+                receiveMessage: function(message) {
+                  window.flutter_inappwebview.callHandler('onPostMessage', message);
+                }
+              };
+            
+              // Simulasi Native iOS
+              window.webkit = {
+                messageHandlers: {
+                  iOSHandler: {
+                    postMessage: function(message) {
+                      window.flutter_inappwebview.callHandler('onPostMessage', message);
+                    }
+                  }
+                }
+              };
+            
+              // Fallback untuk Generic WebView
+              window.postMessage = function(message) {
+                window.flutter_inappwebview.callHandler('onPostMessage', message);
+              };
+            """);
               setState(() => _isLoading = false);
               final regex = RegExp(r"^(https?:\/\/[^\/?]+\/[^?]*)");
               final match = regex.firstMatch(url?.toString() ?? "");
@@ -346,8 +389,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onGeolocationPermissionsShowPrompt: _handleGeolocationPermission,
             onConsoleMessage: _handleConsoleMessage,
           ),
-          if (_isLoading)
-            const Center(child: CircularProgressIndicator()),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
         ],
       ),
     );
