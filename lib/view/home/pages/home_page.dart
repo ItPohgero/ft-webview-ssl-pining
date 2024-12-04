@@ -257,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen> {
       InAppWebViewController controller, ConsoleMessage consoleMessage) {
     setState(() {
       consoleLogs
-          .add('[${consoleMessage.messageLevel}] ${consoleMessage.message}');
+          .add('[${consoleMessage.messageLevel}]-${consoleMessage.message}');
     });
   }
 
@@ -325,10 +325,11 @@ class _HomeScreenState extends State<HomeScreen> {
             },
             onLoadStart: (controller, url) => setState(() => _isLoading = true),
             onLoadStop: (controller, url) async {
-              await controller.evaluateJavascript(source: """
+              await controller.evaluateJavascript(source: """              
               // Simulasi WebView React Native postMessage untuk Flutter
               window.ReactNativeWebView = {
                 postMessage: function(message) {
+                  console.log(message);
                   window.flutter_inappwebview.callHandler('onPostMessage', message);
                 }
               };
@@ -338,6 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Plugins: {
                   WebView: {
                     postMessage: function(message) {
+                      console.log(message);
                       window.flutter_inappwebview.callHandler('onPostMessage', message);
                     }
                   }
@@ -349,6 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 plugins: {
                   bridge: {
                     postMessage: function(message) {
+                      console.log(message);
                       window.flutter_inappwebview.callHandler('onPostMessage', message);
                     }
                   }
@@ -358,6 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
               // Simulasi Native Android
               window.Android = {
                 receiveMessage: function(message) {
+                  console.log(message);
                   window.flutter_inappwebview.callHandler('onPostMessage', message);
                 }
               };
@@ -367,6 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 messageHandlers: {
                   iOSHandler: {
                     postMessage: function(message) {
+                      console.log(message);
                       window.flutter_inappwebview.callHandler('onPostMessage', message);
                     }
                   }
@@ -375,6 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
             
               // Fallback untuk Generic WebView
               window.postMessage = function(message) {
+                console.log(message);
                 window.flutter_inappwebview.callHandler('onPostMessage', message);
               };
             """);
